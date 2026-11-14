@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#A67C3B">
+<meta name="color-scheme" content="light">
+<script>document.documentElement.setAttribute("data-theme","light")</script>
 <title>এডুকেশন ফান্ড</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@500;600;700&family=Hind+Siliguri:wght@400;500;600&display=swap">
 <style>
@@ -228,6 +230,19 @@ body{padding-block:16px calc(104px + env(safe-area-inset-bottom,0px))}
 [hidden]{display:none!important}
 img{max-width:100%}
 .fld input[type=password]{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:46px;width:100%;font-size:16px}
+#authbox{display:grid;gap:14px}
+.alogo{width:72px;height:72px;border-radius:22px;background:var(--accent);display:grid;place-items:center;margin:8px auto 0}
+.alogo svg{width:40px;height:40px;stroke:var(--accent-ink);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.atitle{font:700 27px/1.3 var(--font-display);margin:6px 0 0;text-align:center}
+.asub{margin:0;text-align:center;color:var(--muted);font-size:17px}
+.abig{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:60px;border-radius:18px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);font:inherit;font-size:20px;font-weight:700;cursor:pointer}
+.abig.alt{background:transparent;color:var(--accent)}
+.abig svg,.aback svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.aback{display:inline-flex;align-items:center;gap:6px;justify-self:start;background:none;border:0;color:var(--muted);font:inherit;font-size:17px;min-height:44px;padding:0;cursor:pointer}
+.afld{display:grid;gap:6px}.afld label{font-weight:600;font-size:17px}
+.afld input{background:var(--surface);color:var(--fg);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;min-height:56px;width:100%;font:inherit;font-size:18px}
+.ahint{font-size:15px;color:var(--muted);background:var(--surface2);border-radius:12px;padding:10px 12px}
+.amsg{margin:0;font-size:16px;color:var(--muted)}.amsg.aerr{color:#B3402F;font-weight:600}
 </style>
 </head>
 <body>
@@ -247,7 +262,6 @@ img{max-width:100%}
 
 <div id="auth" style="position:fixed;inset:0;z-index:100;background:var(--bg);overflow:auto;display:none">
   <div style="max-width:420px;margin:0 auto;padding:32px max(16px,env(safe-area-inset-left,0px)) 32px;display:grid;gap:14px">
-    <div><h1 style="font:700 26px/1.3 var(--font-display);margin:0">এডুকেশন ফান্ড</h1><p style="margin:4px 0 0;color:var(--muted)">সমিতির হিসাব-খাতা। সদস্যদের লগইন করতে হবে।</p></div>
     <div id="authbox"></div>
   </div>
 </div>
@@ -1086,17 +1100,16 @@ var uid=null,role=null,isAdmin=false,booted=false,starting=false;
 var PIX='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 
 /* ---------- login screen ---------- */
-var amode='google',pstep=0,pnum='',amsg='',aerr=false;
+var amode='welcome',pstep=0,pnum='',amsg='',aerr=false;
+var ICO={arrow:'<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',user:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>',back:'<svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',cap:'<svg viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg>'};
 function authView(){
-  var tabs=[['google','Google'],['email','ইমেইল'],['phone','ফোন']].map(function(t){return '<button type="button" data-a="tab" data-m="'+t[0]+'" aria-pressed="'+(amode===t[0])+'">'+t[1]+'</button>'}).join('');
-  var body='';
-  if(amode==='google')body='<p style="margin:0;color:var(--muted)">আপনার Gmail দিয়ে এক চাপে ঢুকুন।</p><button type="button" class="btn primary" data-a="google">Google দিয়ে লগইন</button>';
-  else if(amode==='email')body='<div class="fld"><label for="a_email">ইমেইল</label><input id="a_email" type="text" inputmode="email" autocomplete="email" autocapitalize="off"></div><div class="fld"><label for="a_pass">পাসওয়ার্ড</label><input id="a_pass" type="password" autocomplete="current-password"></div><div class="fld"><label for="a_name">নাম (শুধু নতুন অ্যাকাউন্টের জন্য)</label><input id="a_name" type="text" autocomplete="name"></div><div class="btns"><button type="button" class="btn primary" data-a="email-in">লগইন</button><button type="button" class="btn" data-a="email-up">নতুন অ্যাকাউন্ট</button></div>';
-  else if(pstep===0)body='<div class="fld"><label for="a_phone">মোবাইল নম্বর</label><input id="a_phone" type="text" inputmode="tel" placeholder="01XXXXXXXXX বা +966..." autocomplete="tel"><small>দেশের কোডসহ লিখুন। বাংলাদেশের নম্বর 01 দিয়ে লিখলে নিজে +880 বসবে।</small></div><button type="button" class="btn primary" data-a="phone-send">কোড পাঠান</button>';
-  else body='<p style="margin:0;color:var(--muted)">'+esc2(pnum)+' নম্বরে একটা কোড গেছে।</p><div class="fld"><label for="a_code">কোড</label><input id="a_code" type="text" inputmode="numeric" autocomplete="one-time-code"></div><div class="btns"><button type="button" class="btn primary" data-a="phone-verify">নিশ্চিত করুন</button><button type="button" class="btn" data-a="phone-back">নম্বর বদলান</button></div>';
-  return '<div class="seg" role="group" aria-label="লগইনের উপায়">'+tabs+'</div><section class="card" style="margin-top:12px;display:grid;gap:12px">'+body+(amsg?'<p class="'+(aerr?'err':'')+'" style="margin:0;'+(aerr?'':'color:var(--muted)')+'">'+esc2(amsg)+'</p>':'')+'</section>';
+  var m=amsg?'<p class="amsg '+(aerr?'aerr':'')+'">'+esc2(amsg)+'</p>':'';
+  if(amode==='welcome')return '<div class="alogo">'+ICO.cap+'</div><h1 class="atitle">আসসালামু আলাইকুম 🌿<br>স্বাগতম এডুকেশন ফান্ডে</h1><p class="asub">আমাদের সমিতির হিসাব এখানে দেখুন</p><div style="height:24px"></div><button type="button" class="abig" data-a="tab" data-m="login">'+ICO.arrow+'আমার অ্যাকাউন্ট আছে</button><button type="button" class="abig alt" data-a="tab" data-m="signup">'+ICO.user+'আমি নতুন</button><div class="ahint">প্রথমবার এলে "আমি নতুন" চাপুন। আপনার নাম, ইমেইল আর একটা পাসওয়ার্ড দিলেই হবে। এরপর এডমিন অনুমোদন দিলে হিসাব দেখতে পাবেন।</div>';
+  var back='<button type="button" class="aback" data-a="tab" data-m="welcome">'+ICO.back+'পিছনে</button>';
+  if(amode==='login')return back+'<h1 class="atitle">লগইন</h1><p class="asub">আপনার ইমেইল ও পাসওয়ার্ড দিন</p><div class="afld"><label for="a_email">ইমেইল</label><input id="a_email" type="text" inputmode="email" autocomplete="email" autocapitalize="off" placeholder="example@gmail.com"></div><div class="afld"><label for="a_pass">পাসওয়ার্ড</label><input id="a_pass" type="password" autocomplete="current-password"></div>'+m+'<button type="button" class="abig" data-a="email-in">ঢুকুন</button>';
+  return back+'<h1 class="atitle">নতুন অ্যাকাউন্ট</h1><p class="asub">একবারই করতে হবে</p><div class="afld"><label for="a_name">আপনার নাম</label><input id="a_name" type="text" autocomplete="name"></div><div class="afld"><label for="a_email">ইমেইল (Gmail)</label><input id="a_email" type="text" inputmode="email" autocomplete="email" autocapitalize="off" placeholder="example@gmail.com"></div><div class="afld"><label for="a_pass">পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)</label><input id="a_pass" type="password" autocomplete="new-password"></div>'+m+'<button type="button" class="abig" data-a="email-up">অ্যাকাউন্ট খুলুন</button>';
 }
-function paintAuth(){showAuth();box.innerHTML=authView()}
+function paintAuth(){var keep={};['a_email','a_pass','a_name'].forEach(function(k){var e=document.getElementById(k);if(e)keep[k]=e.value});showAuth();box.innerHTML=authView();Object.keys(keep).forEach(function(k){var e=document.getElementById(k);if(e)e.value=keep[k]})}
 function say(m,e){amsg=m;aerr=!!e;paintAuth()}
 function val(id){var e=document.getElementById(id);return e?e.value.trim():''}
 function phoneFix(s){var d=s.replace(/[\s\-()]/g,'');if(/^01\d{9}$/.test(d))return '+88'+d;if(/^8801\d{9}$/.test(d))return '+'+d;return d}
