@@ -268,7 +268,7 @@ input,select,textarea{font-size:16px!important}
 
 
 <div class="page" id="app">
-  <div class="top"><div><h1>এডুকেশন ফান্ড</h1><small>সমিতির হিসাব-খাতা</small></div><span style="display:flex;gap:8px;align-items:center"><span id="mode"></span><button type="button" class="btn sm" id="logout" hidden>লগ আউট</button></span></div>
+  <div class="top"><div><h1>এডুকেশন ফান্ড</h1><small>সমিতির হিসাব-খাতা</small></div><span style="display:flex;gap:8px;align-items:center"><span id="mode"></span><button type="button" class="btn sm" id="modeBtn" hidden></button><button type="button" class="btn sm" id="logout" hidden>লগ আউট</button></span></div>
   <div id="note"></div>
   <main id="view" class="page" style="padding:0"></main>
 </div>
@@ -1280,11 +1280,12 @@ async function start(){
     var prof=null;
     for(var i=0;i<6&&!prof;i++){var r=await sb.from('profiles').select('*').eq('id',uid).maybeSingle();prof=r.data;if(!prof)await new Promise(function(ok){setTimeout(ok,500)})}
     if(!prof){paintWait(['অ্যাকাউন্ট তৈরি হয়নি','একটু পরে আবার চেষ্টা করুন।']);return}
-    role=prof.role;isAdmin=role==='admin'&&ADMIN_SITE;
+    role=prof.role;var memberView=false;try{memberView=localStorage.getItem('ef_member_view')==='1'}catch(e){}isAdmin=role==='admin'&&!memberView;
     if(ADMIN_SITE&&role!=='admin'&&role!=='blocked'&&role!=='pending'){paintWait(['শুধু এডমিনের জন্য','এই পেজে শুধু এডমিন ঢুকতে পারেন। সদস্যরা মূল সাইট ব্যবহার করুন।']);return}
     if(role==='admin'||role==='member'){
       booted=true;hideAuth();
-      var lo=document.getElementById('logout');if(lo){lo.hidden=!ADMIN_SITE;lo.addEventListener('click',async function(){await sb.auth.signOut();location.reload()})}
+      var lo=document.getElementById('logout');var mb=document.getElementById('modeBtn');if(mb&&role==='admin'){mb.hidden=false;mb.textContent=isAdmin?'সদস্য হিসেবে দেখুন':'এডমিন মোড';mb.addEventListener('click',function(){try{localStorage.setItem('ef_member_view',isAdmin?'1':'0')}catch(e){}location.reload()})}
+      if(lo){lo.hidden=!isAdmin;lo.addEventListener('click',async function(){await sb.auth.signOut();location.reload()})}
       var sc=document.createElement('script');sc.textContent=document.getElementById('appjs').textContent;document.body.appendChild(sc);
       sb.channel('docs-live').on('postgres_changes',{event:'*',schema:'public',table:'docs'},function(p){var c=(p.new&&p.new.coll)||(p.old&&p.old.coll);if(c)reload(c)}).subscribe();
       if(isAdmin){loadAccts();setInterval(loadAccts,20000)}
