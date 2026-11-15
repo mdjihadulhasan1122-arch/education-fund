@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#A67C3B">
 <meta name="color-scheme" content="light">
 <script>document.documentElement.setAttribute("data-theme","light")</script>
@@ -230,6 +230,25 @@ body{padding-block:16px calc(104px + env(safe-area-inset-bottom,0px))}
 [hidden]{display:none!important}
 img{max-width:100%}
 .fld input[type=password]{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:46px;width:100%;font-size:16px}
+html{-webkit-text-size-adjust:100%;overflow-x:hidden}
+body{overflow-x:hidden;max-width:100vw;touch-action:manipulation}
+input,select,textarea{font-size:16px!important}
+.ntc{display:flex;align-items:stretch;border-radius:14px;overflow:hidden;margin:0 0 12px;background:var(--accent);color:var(--accent-ink);min-height:44px}
+.ntc b{flex:none;background:#B3402F;color:#fff;padding:0 14px;display:flex;align-items:center;font-size:16px}
+.ntx{flex:1;min-width:0;overflow:hidden;display:flex;align-items:center;white-space:nowrap}
+.ntx span{display:inline-block;padding-left:100%;animation:ntk 22s linear infinite;font-size:16px}
+@keyframes ntk{to{transform:translateX(-100%)}}
+.hsl{position:relative;height:230px;border-radius:24px;overflow:hidden;margin:0 0 12px;background:linear-gradient(135deg,#B98B43,#8A6329)}
+.hs{position:absolute;inset:0;opacity:0;transition:opacity .8s}.hs.on{opacity:1}
+.hs img{width:100%;height:100%;object-fit:cover;display:block}
+.hart{display:grid;place-items:center}.hart svg{width:96px;height:96px;stroke:rgba(255,255,255,.9);fill:none;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
+.hsl::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55),transparent 55%);pointer-events:none}
+.hcap{position:absolute;left:14px;right:14px;bottom:30px;z-index:2;color:#fff;font:700 21px/1.3 var(--font-display);text-align:center;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+.hdots{position:absolute;left:0;right:0;bottom:10px;z-index:2;display:flex;justify-content:center;gap:6px}
+.hdots i{width:8px;height:8px;border-radius:8px;background:rgba(255,255,255,.5)}.hdots i.on{width:22px;background:#fff}
+.gcard{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:14px 16px;margin:0 0 12px}
+.gcard b{display:block;font:700 22px/1.3 var(--font-display);color:var(--accent)}.gcard small{color:var(--muted);font-size:14px}
+.gcard span{font:700 19px var(--font-display);color:var(--accent);white-space:nowrap}
 #authbox{display:grid;gap:14px}
 .alogo{width:72px;height:72px;border-radius:22px;background:var(--accent);display:grid;place-items:center;margin:8px auto 0}
 .alogo svg{width:40px;height:40px;stroke:var(--accent-ink);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -375,7 +394,7 @@ function tapEl(act,id,inner,cls){return S.canWrite?'<button type="button" class=
 function viewHome(){
   var X=S.X,h='';
   var nothing=!S.members.length&&!S.cows.length&&!S.banks.length&&!S.loans.length;
-  h+=accountsCard();h+=meCard();h+=pendNote();h+='<section class="hero"><p class="eyebrow">সমিতির মোট সম্পদ</p><p class="big">'+money(X.shouldHave)+'</p><p class="sub">মোট জমা + গরুর লাভ − খরচ</p></section>';
+  h+=heroTop();h+=accountsCard();h+=meCard();h+=pendNote();h+='<section class="hero"><p class="eyebrow">সমিতির মোট সম্পদ</p><p class="big">'+money(X.shouldHave)+'</p><p class="sub">মোট জমা + গরুর লাভ − খরচ</p></section>';
   if(nothing){
     h+=emptyCard('এখনো কোনো তথ্য ওঠেনি। প্রথমে সদস্যদের নাম তুলুন, তারপর জমা, গরু আর ব্যাংকের হিসাব।',btn('go-members','সদস্য যোগ করুন','primary'));
     if(!S.canWrite)h+='<div class="card empty"><p>সম্পাদক তথ্য তুললে এখানে সব হিসাব দেখা যাবে।</p></div>';
@@ -764,6 +783,9 @@ document.addEventListener('click',function(e){
    case 'pdf-all':makeDownload(function(){var l=summaryPages();X.members.forEach(function(mm){l.push(memberPage(mm))});return l},'education-fund-all-members.pdf');break;
    case 'ok-user':case 'no-user':if(S.canWrite&&window.__acctAct){window.__acctAct(id,a==='ok-user'?'member':'blocked').then(function(){toast(a==='ok-user'?'অনুমোদন দেওয়া হয়েছে':'বাতিল করা হয়েছে')})}break;
    case 'restore':{var rf=document.getElementById('restoreFile');if(rf)rf.click();break}
+   case 'my-profile':openForm(F.myprofile());break;
+   case 'edit-notice':if(S.canWrite)openForm(F.notice());break;
+   case 'edit-hero':if(S.canWrite)openForm(F.hero());break;
    case 'link-me':{var sel=document.getElementById('meSel');if(sel&&sel.value&&S.db&&S.uid)S.db.collection('links').doc(S.uid).set({memberId:sel.value,t:Date.now()}).then(function(){toast('সংযুক্ত হয়েছে')},function(er){toast(errMsg(er))});break}
    case 'skip-link':S.skipLink=true;try{localStorage.setItem('ef_skip','1')}catch(e){}render();break;
    case 'unlink':if(S.canWrite&&S.db){S.links.filter(function(l){return l.memberId===id}).forEach(function(l){S.db.collection('links').doc(l.id).delete().catch(function(er){toast(errMsg(er))})});toast('সংযোগ মুছে ফেলা হয়েছে')}break;
@@ -1054,6 +1076,59 @@ document.addEventListener('change',function(e){
   }).catch(function(){toast('ফাইলটা পড়া যায়নি')});
   el.value='';
 });
+
+/* ---------- member self profile, hero, notice ---------- */
+F.myprofile=function(){return {title:'আপনার তথ্য',saveLabel:'জমা দিন',fields:[
+  {k:'name',label:'আপনার নাম',req:1},{k:'phone',label:'মোবাইল নম্বর',type:'tel',req:1},{k:'country',label:'কোন দেশে থাকেন',ph:'যেমন: বাংলাদেশ, সৌদি আরব'},
+  {k:'photo',label:'আপনার ছবি',type:'photo'},{k:'start',label:'কোন মাস থেকে জমা শুরু করেছেন',type:'month',req:1}],
+  values:{start:FUND_START},
+  onSave:async function(v){
+    if(!S.db||!S.uid)throw {msg:'আবার লগইন করুন'};
+    v.no=nextNo();v.submitted='1';v.by=S.uid;
+    try{await S.db.collection('members').doc(S.uid).set(v)}catch(e){throw {msg:'তথ্য আগেই জমা দেওয়া হয়েছে। বদলাতে হলে এডমিনকে বলুন।'}}
+    await S.db.collection('links').doc(S.uid).set({memberId:S.uid,t:Date.now()});
+    toast('তথ্য জমা হয়েছে');
+  }}};
+function profileCard(){
+  return '<section class="card"><h3>আপনার তথ্য দিন</h3><p class="muted" style="margin-bottom:10px">নিজের নাম, মোবাইল নম্বর, ছবি আর কোন মাস থেকে জমা শুরু করেছেন, একবার পূরণ করুন। কোন মাসে কত টাকা জমা হলো তা এডমিন তুলবেন।</p><div class="btns">'+btn('my-profile','তথ্য পূরণ করুন','primary')+'</div></section>';
+}
+var _meCard=meCard;
+meCard=function(){
+  var h=_meCard();
+  if(!S.inited||!S.db||!S.uid||!S.canPost||S.canWrite||myId())return h;
+  if(!S.loaded.links||!S.loaded.members)return h;
+  var mine=S.members.filter(function(x){return x.id===S.uid})[0];
+  return (mine?'':profileCard())+h;
+};
+function setting(id){return S.settings.filter(function(x){return x.id===id})[0]||{}}
+F.notice=function(){var s=setting('notice');return {title:'নোটিশ',fields:[{k:'text',label:'নোটিশের লেখা (খালি রাখলে সাধারণ স্বাগতম দেখাবে)',type:'textarea'}],values:{text:s.text||''},
+  onSave:function(v){if(!needDb())return;return S.db.collection('settings').doc('notice').set({text:v.text})}}};
+F.hero=function(){var s=setting('hero'),p=s.photos||[];return {title:'প্রথম পাতার ছবি',fields:[{k:'caption',label:'ছবির ওপরের লেখা'},
+  {k:'p1',label:'ছবি ১',type:'photo'},{k:'p2',label:'ছবি ২',type:'photo'},{k:'p3',label:'ছবি ৩',type:'photo'},{k:'p4',label:'ছবি ৪',type:'photo'}],
+  values:{caption:s.caption||'',p1:p[0],p2:p[1],p3:p[2],p4:p[3]},
+  onSave:function(v){if(!needDb())return;return S.db.collection('settings').doc('hero').set({caption:v.caption,photos:[v.p1,v.p2,v.p3,v.p4].filter(Boolean)})}}};
+function greetText(){var h=new Date().getHours();return h>=4&&h<12?'শুভ সকাল ☀️':h<15?'শুভ দুপুর 🌤️':h<17?'শুভ বিকাল 🌇':h<19?'শুভ সন্ধ্যা 🌆':'শুভ রাত্রি 🌙'}
+function heroTop(){
+  var hs=setting('hero'),ns=setting('notice'),ph=(hs.photos||[]).filter(Boolean),cap=hs.caption||'আমাদের সমিতি, আমাদের ভরসা';
+  var nt=ns.text||'এডুকেশন ফান্ডে স্বাগতম। সমিতির সব হিসাব এখানে স্বচ্ছভাবে দেখা যাবে।';
+  var h='<div class="ntc"><b>নোটিশ</b><div class="ntx"><span>'+esc(nt)+'</span></div></div><div class="hsl" id="hsl">';
+  if(ph.length)h+=ph.map(function(id,i){return '<div class="hs'+(i?'':' on')+'"><img src="'+esc(blobUrl(id))+'" alt=""></div>'}).join('');
+  else h+='<div class="hs on hart"><svg viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg></div>';
+  h+='<div class="hcap">'+esc(cap)+'</div>'+(ph.length>1?'<div class="hdots">'+ph.map(function(_,i){return '<i class="'+(i?'':'on')+'"></i>'}).join('')+'</div>':'')+'</div>';
+  var d=new Date();
+  h+='<div class="gcard"><div><b>'+greetText()+'</b><small>'+esc(d.toLocaleDateString('bn-BD',{weekday:'long',day:'numeric',month:'long',year:'numeric'}))+'</small></div><span id="gclk">'+esc(d.toLocaleTimeString('bn-BD'))+'</span></div>';
+  if(S.canWrite)h+='<div class="btns" style="margin:0 0 12px">'+btn('edit-notice','নোটিশ বদলান','sm')+btn('edit-hero','ছবি ও লেখা বদলান','sm')+'</div>';
+  return h;
+}
+setInterval(function(){var c=document.getElementById('gclk');if(c)c.textContent=new Date().toLocaleTimeString('bn-BD')},1000);
+setInterval(function(){
+  var s=document.querySelectorAll('#hsl .hs');if(s.length<2)return;
+  var d=document.querySelectorAll('#hsl .hdots i'),k=0;
+  s.forEach(function(e,i){if(e.classList.contains('on'))k=i});
+  s[k].classList.remove('on');var n=(k+1)%s.length;s[n].classList.add('on');
+  d.forEach(function(e,i){e.classList.toggle('on',i===n)});
+},4500);
+document.addEventListener('gesturestart',function(e){e.preventDefault()});
 /* ---------- boot ---------- */
 render();
 function use(n){return window.claude&&window.claude.use?window.claude.use(n):Promise.resolve(null)}
@@ -1086,6 +1161,7 @@ function use(n){return window.claude&&window.claude.use?window.claude.use(n):Pro
 /* ====== আপনার Supabase তথ্য এখানে বসান (Project Settings > API) ====== */
 var SUPABASE_URL='https://jjxdaboropzwvocedupc.supabase.co';
 var SUPABASE_KEY='sb_publishable_CzassjYIDhz0q3oMfvtFow_Y6-gAup2';
+var ADMIN_SITE=false;
 /* =================================================================== */
 var $=function(s){return document.querySelector(s)};
 var authEl=$('#auth'),box=$('#authbox');
@@ -1100,13 +1176,13 @@ var uid=null,role=null,isAdmin=false,booted=false,starting=false;
 var PIX='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 
 /* ---------- login screen ---------- */
-var amode='welcome',pstep=0,pnum='',amsg='',aerr=false;
+var amode=ADMIN_SITE?'login':'welcome',pstep=0,pnum='',amsg='',aerr=false;
 var ICO={arrow:'<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',user:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>',back:'<svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',cap:'<svg viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg>'};
 function authView(){
   var m=amsg?'<p class="amsg '+(aerr?'aerr':'')+'">'+esc2(amsg)+'</p>':'';
   if(amode==='welcome')return '<div class="alogo">'+ICO.cap+'</div><h1 class="atitle">আসসালামু আলাইকুম 🌿<br>স্বাগতম এডুকেশন ফান্ডে</h1><p class="asub">আমাদের সমিতির হিসাব এখানে দেখুন</p><div style="height:24px"></div><button type="button" class="abig" data-a="tab" data-m="login">'+ICO.arrow+'আমার অ্যাকাউন্ট আছে</button><button type="button" class="abig alt" data-a="tab" data-m="signup">'+ICO.user+'আমি নতুন</button><div class="ahint">প্রথমবার এলে "আমি নতুন" চাপুন। আপনার নাম, ইমেইল আর একটা পাসওয়ার্ড দিলেই হবে। এরপর এডমিন অনুমোদন দিলে হিসাব দেখতে পাবেন।</div>';
-  var back='<button type="button" class="aback" data-a="tab" data-m="welcome">'+ICO.back+'পিছনে</button>';
-  if(amode==='login')return back+'<h1 class="atitle">লগইন</h1><p class="asub">আপনার ইমেইল ও পাসওয়ার্ড দিন</p><div class="afld"><label for="a_email">ইমেইল</label><input id="a_email" type="text" inputmode="email" autocomplete="email" autocapitalize="off" placeholder="example@gmail.com"></div><div class="afld"><label for="a_pass">পাসওয়ার্ড</label><input id="a_pass" type="password" autocomplete="current-password"></div>'+m+'<button type="button" class="abig" data-a="email-in">ঢুকুন</button>';
+  var back=ADMIN_SITE?'':'<button type="button" class="aback" data-a="tab" data-m="welcome">'+ICO.back+'পিছনে</button>';
+  if(amode==='login')return back+'<div class="alogo">'+ICO.cap+'</div><h1 class="atitle">'+(ADMIN_SITE?'এডমিন লগইন':'লগইন')+'</h1><p class="asub">আপনার ইমেইল ও পাসওয়ার্ড দিন</p><div class="afld"><label for="a_email">ইমেইল</label><input id="a_email" type="text" inputmode="email" autocomplete="email" autocapitalize="off" placeholder="example@gmail.com"></div><div class="afld"><label for="a_pass">পাসওয়ার্ড</label><input id="a_pass" type="password" autocomplete="current-password"></div>'+m+'<button type="button" class="abig" data-a="email-in">ঢুকুন</button>';
   return back+'<h1 class="atitle">নতুন অ্যাকাউন্ট</h1><p class="asub">একবারই করতে হবে</p><div class="afld"><label for="a_name">আপনার নাম</label><input id="a_name" type="text" autocomplete="name"></div><div class="afld"><label for="a_email">ইমেইল (Gmail)</label><input id="a_email" type="text" inputmode="email" autocomplete="email" autocapitalize="off" placeholder="example@gmail.com"></div><div class="afld"><label for="a_pass">পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)</label><input id="a_pass" type="password" autocomplete="new-password"></div>'+m+'<button type="button" class="abig" data-a="email-up">অ্যাকাউন্ট খুলুন</button>';
 }
 function paintAuth(){var keep={};['a_email','a_pass','a_name'].forEach(function(k){var e=document.getElementById(k);if(e)keep[k]=e.value});showAuth();box.innerHTML=authView();Object.keys(keep).forEach(function(k){var e=document.getElementById(k);if(e)e.value=keep[k]})}
@@ -1166,7 +1242,7 @@ async function signNow(){
   window.dispatchEvent(new Event('hashchange'));
 }
 var assets={upload:async function(blob){
-  var path=newId()+'.jpg',r=await sb.storage.from('photos').upload(path,blob,{contentType:'image/jpeg'});
+  var path=uid+'/'+newId()+'.jpg',r=await sb.storage.from('photos').upload(path,blob,{contentType:'image/jpeg'});
   if(r.error)throw perm(r.error);
   var s=await sb.storage.from('photos').createSignedUrl(path,86400);SIGNED[path]=(s.data&&s.data.signedUrl)||PIX;
   return {id:path,url:SIGNED[path]};
@@ -1178,7 +1254,7 @@ var downloads={save:async function(r){
 }};
 window.claude={use:async function(n){
   if(n==='db')return db;if(n==='user')return user;if(n==='downloads')return downloads;
-  if(n==='assets')return isAdmin?assets:null;return null;
+  if(n==='assets')return assets;return null;
 }};
 
 /* ---------- admin: approve new accounts ---------- */
@@ -1204,10 +1280,11 @@ async function start(){
     var prof=null;
     for(var i=0;i<6&&!prof;i++){var r=await sb.from('profiles').select('*').eq('id',uid).maybeSingle();prof=r.data;if(!prof)await new Promise(function(ok){setTimeout(ok,500)})}
     if(!prof){paintWait(['অ্যাকাউন্ট তৈরি হয়নি','একটু পরে আবার চেষ্টা করুন।']);return}
-    role=prof.role;isAdmin=role==='admin';
+    role=prof.role;isAdmin=role==='admin'&&ADMIN_SITE;
+    if(ADMIN_SITE&&role!=='admin'&&role!=='blocked'&&role!=='pending'){paintWait(['শুধু এডমিনের জন্য','এই পেজে শুধু এডমিন ঢুকতে পারেন। সদস্যরা মূল সাইট ব্যবহার করুন।']);return}
     if(role==='admin'||role==='member'){
       booted=true;hideAuth();
-      var lo=document.getElementById('logout');if(lo){lo.hidden=false;lo.addEventListener('click',async function(){await sb.auth.signOut();location.reload()})}
+      var lo=document.getElementById('logout');if(lo){lo.hidden=!ADMIN_SITE;lo.addEventListener('click',async function(){await sb.auth.signOut();location.reload()})}
       var sc=document.createElement('script');sc.textContent=document.getElementById('appjs').textContent;document.body.appendChild(sc);
       sb.channel('docs-live').on('postgres_changes',{event:'*',schema:'public',table:'docs'},function(p){var c=(p.new&&p.new.coll)||(p.old&&p.old.coll);if(c)reload(c)}).subscribe();
       if(isAdmin){loadAccts();setInterval(loadAccts,20000)}
