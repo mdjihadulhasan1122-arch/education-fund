@@ -390,7 +390,7 @@ function derive(){
     var mm=d.months||{};
     Object.keys(mm).forEach(function(k){var a=+(mm[k]&&mm[k].a)||0;(P[d.memberId]=P[d.memberId]||{})[d.year+'-'+k]=a;depTotal+=a});
   });
-  var members=S.members.slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'','bn')}).map(function(m){
+  var members=S.members.filter(function(m){return !m.pend}).slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'','bn')}).map(function(m){
     var monthly=rateFor(CUR),start=m.start||FUND_START,yms=monthsBetween(start,CUR),paid=0,due=0,dueList=[],ok=0,mine=P[m.id]||{};
     Object.keys(mine).forEach(function(k){paid+=mine[k]});
     yms.forEach(function(ym){var r=rateFor(ym),a=mine[ym]||0;if(a>=r)ok++;else{due+=r-a;dueList.push(ym)}});
@@ -461,7 +461,7 @@ function memberCard(m){
 function viewMembers(){
   var X=S.X;
   var h=head('সদস্য',fmtN(X.members.length,false)+' জন','<span style="display:flex;gap:8px;flex-wrap:wrap">'+(S.canWrite&&X.members.length?btn('pdf-all','সবার PDF','sm'):'')+(S.canWrite?btn('add-member','+ নতুন সদস্য','primary sm'):'')+'</span>');
-  if(!X.members.length)h+=emptyCard('এখনো কোনো সদস্য নেই।',btn('add-member','প্রথম সদস্য যোগ করুন','primary'));
+  h+=pendMembCard();if(!X.members.length)h+=emptyCard('এখনো কোনো সদস্য নেই।',btn('add-member','প্রথম সদস্য যোগ করুন','primary'));
   else h+='<div class="list">'+X.members.map(memberCard).join('')+'</div>';
   return h;
 }
@@ -814,6 +814,9 @@ document.addEventListener('click',function(e){
    case 'ok-user':case 'no-user':if(S.canWrite&&window.__acctAct){window.__acctAct(id,a==='ok-user'?'member':'blocked').then(function(){toast(a==='ok-user'?'অনুমোদন দেওয়া হয়েছে':'বাতিল করা হয়েছে')})}break;
    case 'restore':{var rf=document.getElementById('restoreFile');if(rf)rf.click();break}
    case 'my-profile':openForm(F.myprofile());break;
+   case 'my-edit':{var me10=S.members.filter(function(x){return x.id===S.uid})[0];if(me10&&!S.canWrite)openForm(F.myedit(me10))}break;
+   case 'mem-ok':if(S.canWrite){var pm=find(S.members,id);if(pm){var pv=Object.assign({},pm);delete pv.id;pv.pend='';put('members',id,pv).then(function(){toast('সদস্য হিসেবে অনুমোদন হয়েছে')}).catch(function(er){toast(errMsg(er))})}}break;
+   case 'mem-no':if(S.canWrite&&confirm('এই তথ্য বাতিল করবেন? সদস্য আবার ফর্ম পূরণ করতে পারবেন।')){del('members',id).then(function(){return S.db.collection('links').doc(id).delete()}).catch(function(er){toast(errMsg(er))})}break;
    case 'wa':if(S.canWrite)openForm(F.wa());break;
    case 'add-dec':if(S.canWrite)openForm(F.decision());break;
    case 'edit-dec':if(S.canWrite)openForm(F.decision(id));break;
@@ -1127,10 +1130,10 @@ F.myprofile=function(){return {title:'আপনার তথ্য',saveLabel:'�
   values:{start:FUND_START},
   onSave:async function(v){
     if(!S.db||!S.uid)throw {msg:'আবার লগইন করুন'};
-    v.no=nextNo();v.submitted='1';v.by=S.uid;
+    v.no=nextNo();v.submitted='1';v.by=S.uid;v.pend='1';
     try{await S.db.collection('members').doc(S.uid).set(v)}catch(e){throw {msg:'তথ্য আগেই জমা দেওয়া হয়েছে। বদলাতে হলে এডমিনকে বলুন।'}}
     await S.db.collection('links').doc(S.uid).set({memberId:S.uid,t:Date.now()});
-    toast('তথ্য জমা হয়েছে');
+    toast('তথ্য জমা হয়েছে। এডমিন অনুমোদন দিলে সদস্য হবেন');
   }}};
 function profileCard(){
   return '<section class="card"><h3>আপনার তথ্য দিন</h3><p class="muted" style="margin-bottom:10px">নিজের নাম, মোবাইল নম্বর, ছবি আর কোন মাস থেকে জমা শুরু করেছেন, একবার পূরণ করুন। কোন মাসে কত টাকা জমা হলো তা এডমিন তুলবেন।</p><div class="btns">'+btn('my-profile','তথ্য পূরণ করুন','primary')+'</div></section>';
@@ -1139,10 +1142,10 @@ var _meCard=meCard;
 meCard=function(){
   var h=_meCard();
   if(!S.inited||!S.db||!S.uid||!S.canPost||S.canWrite)return h;
-  if(myId()){var mm=S.X.members.filter(function(x){return x.id===myId()})[0];return mm?h+'<section class="card"><h3>জমার ঘর</h3>'+monthCard(mm)+'</section>':h}
+  if(myId()){var mm=S.X.members.filter(function(x){return x.id===myId()})[0];return mm?h+'<section class="card"><h3>জমার ঘর</h3>'+monthCard(mm)+'</section>':h+waitCard()}
   if(!S.loaded.links||!S.loaded.members)return h;
   var mine=S.members.filter(function(x){return x.id===S.uid})[0];
-  return (mine?'':profileCard())+h;
+  return h;
 };
 /* ---------- month boxes (member taps, admin confirms) ---------- */
 S.sel={};S.gy={};
@@ -1343,6 +1346,42 @@ setInterval(function(){
   d.forEach(function(e,i){e.classList.toggle('on',i===n)});
 },4500);
 document.addEventListener('gesturestart',function(e){e.preventDefault()});
+
+function pendMembCard(){
+  if(!S.canWrite)return '';
+  var L=S.members.filter(function(m){return m.pend});if(!L.length)return '';
+  return '<section class="card"><h3>সদস্য অনুমোদনের অপেক্ষায় ('+fmtN(L.length,false)+')</h3><div class="list">'+L.map(function(m){
+    return '<div class="card" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'+avatar(m.photo,m.name,44)+'<div style="flex:1;min-width:140px"><b>'+esc(m.name||'')+'</b><div class="muted">'+esc((m.country||'')+' · '+(m.phone||'')+' · শুরু '+(m.start||''))+'</div></div>'+btn('mem-ok','অনুমোদন','primary sm','data-id="'+esc(m.id)+'"')+btn('mem-no','বাতিল','sm','data-id="'+esc(m.id)+'"')+'</div>'}).join('')+'</div></section>';
+}
+function waitCard(){
+  var mine=S.members.filter(function(x){return x.id===S.uid})[0];
+  return mine&&mine.pend?'<section class="card"><h3>অনুমোদনের অপেক্ষায়</h3><p class="muted">আপনার তথ্য জমা হয়েছে। এডমিন অনুমোদন দিলে আপনি সদস্য তালিকায় আসবেন।</p></section>':'';
+}
+var _pn8=pendNote;
+pendNote=function(){var h=_pn8();return pendMembCard()+h};
+
+function profBanner(){
+  if(!S.inited||!S.db||!S.uid||!S.canPost||S.canWrite||!S.loaded.links||!S.loaded.members)return '';
+  if(myId()||S.members.some(function(x){return x.id===S.uid}))return '';
+  return '<style>@keyframes efp{0%,100%{box-shadow:0 0 0 0 rgba(166,124,59,.55)}50%{box-shadow:0 0 0 10px rgba(166,124,59,0)}}</style><section class="card" style="border:3px solid var(--accent);background:var(--soft);text-align:center;animation:efp 1.6s infinite"><div style="font-size:36px">👋</div><h2 style="margin:4px 0 6px;font-size:22px">প্রথমে আপনার পরিচয় পূরণ করুন</h2><p style="margin:0 0 12px;font-size:16px">নাম, মোবাইল নম্বর, ছবি আর কোন মাস থেকে জমা শুরু, এগুলো একবার দিন। না দিলে হিসাবে আপনার নাম আসবে না।</p>'+btn('my-profile','✍ এখনই পূরণ করুন','primary','style="width:100%;min-height:58px;font-size:20px"')+'</section>';
+}
+var _tm9=topMoney;
+topMoney=function(){return profBanner()+_tm9()};
+
+F.myedit=function(m){var f=F.myprofile();return {title:'আমার তথ্য বদলান',saveLabel:'সেভ করুন',fields:f.fields,values:m,
+  onSave:async function(v){
+    if(!S.db||!S.uid)throw {msg:'আবার লগইন করুন'};
+    var d=Object.assign({},m);delete d.id;Object.assign(d,v);
+    await S.db.collection('members').doc(S.uid).set(d);
+    toast('তথ্য বদলানো হয়েছে');
+  }}};
+function myEditBar(){
+  if(!S.inited||!S.db||!S.uid||!S.canPost||S.canWrite)return '';
+  if(!S.members.some(function(x){return x.id===S.uid}))return '';
+  return '<div style="display:flex;justify-content:flex-end;margin:0 0 10px">'+btn('my-edit','✏ আমার তথ্য বদলান (নাম, নম্বর, ছবি)','sm')+'</div>';
+}
+var _tm10=topMoney;
+topMoney=function(){return myEditBar()+_tm10()};
 /* ---------- boot ---------- */
 render();
 function use(n){return window.claude&&window.claude.use?window.claude.use(n):Promise.resolve(null)}
@@ -1385,7 +1424,8 @@ function hideAuth(){authEl.style.display='none'}
 if(SUPABASE_URL.indexOf('PASTE')===0||!window.supabase){
   showAuth();box.innerHTML='<section class="card"><h3>সেটআপ বাকি</h3><p style="color:var(--muted)">index.html ফাইলের ওপরের দিকে Supabase URL আর key বসাতে হবে। README-র ধাপগুলো দেখুন।</p></section>';return;
 }
-var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+var sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+function lastEmail(){try{return (localStorage.getItem('ef_last_email')||'').replace(/["<>&]/g,'')}catch(e){return ''}}
 var uid=null,role=null,isAdmin=false,booted=false,starting=false;
 var PIX='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 
@@ -1396,7 +1436,7 @@ function authView(){
   var m=amsg?'<p class="amsg '+(aerr?'aerr':'')+'">'+esc2(amsg)+'</p>':'';
   if(amode==='welcome')return '<div class="alogo">'+ICO.cap+'</div><h1 class="atitle">আসসালামু আলাইকুম 🌿<br>স্বাগতম এডুকেশন ফান্ডে</h1><p class="asub">আমাদের সমিতির হিসাব এখানে দেখুন</p><div style="height:24px"></div><button type="button" class="abig" data-a="tab" data-m="login">'+ICO.arrow+'আমার অ্যাকাউন্ট আছে</button><button type="button" class="abig alt" data-a="tab" data-m="signup">'+ICO.user+'আমি নতুন</button><div class="ahint">প্রথমবার এলে "আমি নতুন" চাপুন। আপনার নাম, ইমেইল আর একটা পাসওয়ার্ড দিলেই হবে। এরপর এডমিন অনুমোদন দিলে হিসাব দেখতে পাবেন।</div>';
   var back=ADMIN_SITE?'':'<button type="button" class="aback" data-a="tab" data-m="welcome">'+ICO.back+'পিছনে</button>';
-  if(amode==='login')return back+'<div class="alogo">'+ICO.cap+'</div><h1 class="atitle">'+(ADMIN_SITE?'এডমিন লগইন':'লগইন')+'</h1><p class="asub">আপনার ইমেইল ও পাসওয়ার্ড দিন</p><div class="afld"><label for="a_email">ইমেইল</label><input id="a_email" type="text" inputmode="email" autocomplete="email" autocapitalize="off" placeholder="example@gmail.com"></div><div class="afld"><label for="a_pass">পাসওয়ার্ড</label><input id="a_pass" type="password" autocomplete="current-password"></div>'+m+'<button type="button" class="abig" data-a="email-in">ঢুকুন</button>';
+  if(amode==='login')return back+'<div class="alogo">'+ICO.cap+'</div><h1 class="atitle">'+(ADMIN_SITE?'এডমিন লগইন':'লগইন')+'</h1><p class="asub">আপনার ইমেইল ও পাসওয়ার্ড দিন</p><div class="afld"><label for="a_email">ইমেইল</label><input id="a_email" type="text" inputmode="email" autocomplete="username" autocapitalize="off" placeholder="example@gmail.com" value="'+lastEmail()+'"></div><div class="afld"><label for="a_pass">পাসওয়ার্ড</label><input id="a_pass" type="password" autocomplete="current-password"></div>'+m+'<button type="button" class="abig" data-a="email-in">ঢুকুন</button>';
   return back+'<h1 class="atitle">নতুন অ্যাকাউন্ট</h1><p class="asub">একবারই করতে হবে</p><div class="afld"><label for="a_name">আপনার নাম</label><input id="a_name" type="text" autocomplete="name"></div><div class="afld"><label for="a_email">ইমেইল (Gmail)</label><input id="a_email" type="text" inputmode="email" autocomplete="email" autocapitalize="off" placeholder="example@gmail.com"></div><div class="afld"><label for="a_pass">পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)</label><input id="a_pass" type="password" autocomplete="new-password"></div>'+m+'<button type="button" class="abig" data-a="email-up">অ্যাকাউন্ট খুলুন</button>';
 }
 function paintAuth(){var keep={};['a_email','a_pass','a_name'].forEach(function(k){var e=document.getElementById(k);if(e)keep[k]=e.value});showAuth();box.innerHTML=authView();Object.keys(keep).forEach(function(k){var e=document.getElementById(k);if(e)e.value=keep[k]})}
@@ -1408,7 +1448,7 @@ authEl.addEventListener('click',async function(e){
   try{
     if(a==='tab'){amode=t.dataset.m;amsg='';pstep=0;paintAuth()}
     else if(a==='google'){var r=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(r.error)say('Google লগইন চালু নেই বা ভুল সেটআপ',true)}
-    else if(a==='email-in'){var r1=await sb.auth.signInWithPassword({email:val('a_email'),password:document.getElementById('a_pass').value});if(r1.error)say('ইমেইল বা পাসওয়ার্ড ভুল',true)}
+    else if(a==='email-in'){var r1=await sb.auth.signInWithPassword({email:val('a_email'),password:document.getElementById('a_pass').value});if(r1.error)say('ইমেইল বা পাসওয়ার্ড ভুল',true);else{try{localStorage.setItem('ef_last_email',val('a_email'))}catch(e){}}}
     else if(a==='email-up'){
       var em=val('a_email'),pw=document.getElementById('a_pass').value;
       if(!em||pw.length<6){say('ইমেইল দিন আর কমপক্ষে ৬ অক্ষরের পাসওয়ার্ড দিন',true);return}
@@ -1499,7 +1539,7 @@ async function start(){
     if(role==='admin'||role==='member'){
       booted=true;hideAuth();
       var lo=document.getElementById('logout');var mb=document.getElementById('modeBtn');if(mb&&role==='admin'){mb.hidden=false;mb.textContent=isAdmin?'সদস্য মোড':'এডমিন মোড';mb.addEventListener('click',function(){try{localStorage.setItem('ef_member_view',isAdmin?'1':'0')}catch(e){}location.reload()})}
-      if(lo){lo.hidden=!isAdmin;lo.addEventListener('click',async function(){await sb.auth.signOut();location.reload()})}
+      if(lo){lo.hidden=false;lo.addEventListener('click',async function(){if(!confirm('লগ আউট করবেন?'))return;await sb.auth.signOut();location.reload()})}
       var sc=document.createElement('script');sc.textContent=document.getElementById('appjs').textContent;document.body.appendChild(sc);
       sb.channel('docs-live').on('postgres_changes',{event:'*',schema:'public',table:'docs'},function(p){var c=(p.new&&p.new.coll)||(p.old&&p.old.coll);if(c)reload(c)}).subscribe();
       if(isAdmin){loadAccts();setInterval(loadAccts,20000)}
