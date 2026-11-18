@@ -289,6 +289,21 @@ input,select,textarea{font-size:16px!important}
 .asub{margin:0;text-align:center;color:var(--muted);font-size:17px}
 .abig{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:60px;border-radius:18px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);font:inherit;font-size:20px;font-weight:700;cursor:pointer}
 .abig.alt{background:transparent;color:var(--accent)}
+.warch{position:relative;width:100%;max-width:340px;height:min(52vh,430px);min-height:340px;margin:6px auto 0;background:#14625A;border-radius:999px 999px 36px 36px;display:flex;flex-direction:column;align-items:center;padding-top:15%;color:#fff;text-align:center;overflow:hidden}
+.warch i{position:absolute;display:block}
+.wr1{inset:16px 16px 0;border:2px solid rgba(226,192,127,.6);border-bottom:0;border-radius:999px 999px 0 0}
+.wr2{inset:30px 30px 0;border:1.5px solid rgba(226,192,127,.3);border-bottom:0;border-radius:999px 999px 0 0}
+.wd1{top:14px;left:50%;width:9px;height:9px;margin-left:-4.5px;border-radius:50%;background:rgba(226,192,127,.7)}
+.wd2{top:30px;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:rgba(226,192,127,.4)}
+.wlogo{position:relative;width:76px;height:76px;border-radius:50%;background:#E2C07F;display:grid;place-items:center}
+.wlogo svg{width:42px;height:42px;stroke:#14625A;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.wsal{position:relative;margin-top:22px;color:#EBD49C;font-size:18px}
+.wtit{position:relative;margin:12px 0 0;font-size:30px;line-height:1.5;color:#fff}
+.wsub{position:relative;margin:12px 16px 0;font-size:15px;color:#C9DDD7}
+.abig.wg{background:#14625A;border-color:#14625A;color:#fff}
+.abig.wg svg{stroke:#E2C07F}
+.abig.alt.wg{background:transparent;color:#14625A}
+.abig.alt.wg svg{stroke:#14625A}
 .abig svg,.aback svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .aback{display:inline-flex;align-items:center;gap:6px;justify-self:start;background:none;border:0;color:var(--muted);font:inherit;font-size:17px;min-height:44px;padding:0;cursor:pointer}
 .afld{display:grid;gap:6px}.afld label{font-weight:600;font-size:17px}
@@ -301,8 +316,8 @@ input,select,textarea{font-size:16px!important}
 
 
 <div class="page" id="app">
-  <div class="top"><div><h1>এডুকেশন ফান্ড</h1><small>সমিতির হিসাব-খাতা</small></div><span style="display:flex;gap:8px;align-items:center"><span id="mode"></span><button type="button" class="btn sm" id="modeBtn" hidden></button><button type="button" class="btn sm" id="logout" hidden>লগ আউট</button></span></div>
-  <div id="note"></div>
+  <div class="top"><div style="display:flex;align-items:center;gap:10px;min-width:0"><button type="button" id="pfBtn" aria-label="প্রোফাইল" style="flex:none;width:52px;height:52px;border-radius:50%;padding:0;border:2px solid var(--accent);background:var(--card);display:grid;place-items:center;overflow:hidden;cursor:pointer"></button><div><h1>এডুকেশন ফান্ড</h1><small>সমিতির হিসাব-খাতা</small></div></div><span id="mode"></span></div>
+  <div id="pfMenu" hidden style="position:relative;height:0"><div class="card" style="position:absolute;z-index:40;top:6px;left:0;min-width:240px;display:flex;flex-direction:column;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.18)"><div><div id="pfName" style="font-weight:700;font-size:18px"></div><div id="pfSub" class="muted"></div></div><button type="button" class="btn sm" id="pfEdit" hidden>✏ আমার তথ্য বদলান</button><button type="button" class="btn sm" id="modeBtn" hidden></button><button type="button" class="btn sm" id="logout" hidden>লগ আউট</button></div></div><div id="note"></div>
   <main id="view" class="page" style="padding:0"></main>
 </div>
 <nav class="tabs" aria-label="মেনু"><div id="tabs"></div></nav>
@@ -390,7 +405,7 @@ function derive(){
     var mm=d.months||{};
     Object.keys(mm).forEach(function(k){var a=+(mm[k]&&mm[k].a)||0;(P[d.memberId]=P[d.memberId]||{})[d.year+'-'+k]=a;depTotal+=a});
   });
-  var members=S.members.filter(function(m){return !m.pend}).slice().sort(function(a,b){return (a.name||'').localeCompare(b.name||'','bn')}).map(function(m){
+  var members=S.members.filter(function(m){return !m.pend}).slice().sort(function(a,b){return ((+a.no||99999)-(+b.no||99999))||(a.name||'').localeCompare(b.name||'','bn')}).map(function(m){
     var monthly=rateFor(CUR),start=m.start||FUND_START,yms=monthsBetween(start,CUR),paid=0,due=0,dueList=[],ok=0,mine=P[m.id]||{};
     Object.keys(mine).forEach(function(k){paid+=mine[k]});
     yms.forEach(function(ym){var r=rateFor(ym),a=mine[ym]||0;if(a>=r)ok++;else{due+=r-a;dueList.push(ym)}});
@@ -607,7 +622,7 @@ function renderDetail(){
 var raf=0;
 function schedule(){if(!raf)raf=requestAnimationFrame(function(){raf=0;render()})}
 function render(){
-  S.X=derive();
+  S.X=derive();try{paintProf()}catch(e){}
   var ready=COLLS.every(function(c){return S.loaded[c]});
   var note='';
   if(S.inited&&!S.db)note='<div class="banner">এই ভিউতে ডাটা সংরক্ষণ চালু নেই। লগইন করে পেজটি খুলুন।</div>';
@@ -1381,7 +1396,28 @@ function myEditBar(){
   return '<div style="display:flex;justify-content:flex-end;margin:0 0 10px">'+btn('my-edit','✏ আমার তথ্য বদলান (নাম, নম্বর, ছবি)','sm')+'</div>';
 }
 var _tm10=topMoney;
-topMoney=function(){return myEditBar()+_tm10()};
+topMoney=function(){return _tm10()};
+
+var pfKey='';
+function paintProf(){
+  var b=document.getElementById('pfBtn');if(!b||!S.uid)return;
+  var me=S.members.filter(function(x){return x.id===S.uid})[0];
+  var nm=me&&me.name?me.name:'আমি',ph=me&&me.photo?me.photo:'';
+  var k=nm+'|'+ph;
+  if(k!==pfKey){pfKey=k;b.innerHTML=avatar(ph,nm,46);
+    var a=document.getElementById('pfName'),c=document.getElementById('pfSub');
+    if(a)a.textContent=nm;if(c)c.textContent=me&&me.no?('EF-'+String(me.no).padStart(3,'0')):(S.canWrite?'এডমিন':'সদস্য');}
+  var ed=document.getElementById('pfEdit');if(ed)ed.hidden=!(me||!S.canWrite);
+}
+(function(){
+  var b=document.getElementById('pfBtn'),m=document.getElementById('pfMenu');if(!b||!m)return;
+  b.addEventListener('click',function(e){e.stopPropagation();m.hidden=!m.hidden});
+  document.addEventListener('click',function(e){if(!m.hidden&&!m.contains(e.target))m.hidden=true});
+  document.getElementById('pfEdit').addEventListener('click',function(){
+    m.hidden=true;var me=S.members.filter(function(x){return x.id===S.uid})[0];
+    if(me)openForm(F.myedit(me));else if(!S.canWrite)openForm(F.myprofile());
+  });
+})();
 /* ---------- boot ---------- */
 render();
 function use(n){return window.claude&&window.claude.use?window.claude.use(n):Promise.resolve(null)}
@@ -1434,7 +1470,7 @@ var amode=ADMIN_SITE?'login':'welcome',pstep=0,pnum='',amsg='',aerr=false;
 var ICO={arrow:'<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',user:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>',back:'<svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',cap:'<svg viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg>'};
 function authView(){
   var m=amsg?'<p class="amsg '+(aerr?'aerr':'')+'">'+esc2(amsg)+'</p>':'';
-  if(amode==='welcome')return '<div class="alogo">'+ICO.cap+'</div><h1 class="atitle">আসসালামু আলাইকুম 🌿<br>স্বাগতম এডুকেশন ফান্ডে</h1><p class="asub">আমাদের সমিতির হিসাব এখানে দেখুন</p><div style="height:24px"></div><button type="button" class="abig" data-a="tab" data-m="login">'+ICO.arrow+'আমার অ্যাকাউন্ট আছে</button><button type="button" class="abig alt" data-a="tab" data-m="signup">'+ICO.user+'আমি নতুন</button><div class="ahint">প্রথমবার এলে "আমি নতুন" চাপুন। আপনার নাম, ইমেইল আর একটা পাসওয়ার্ড দিলেই হবে। এরপর এডমিন অনুমোদন দিলে হিসাব দেখতে পাবেন।</div>';
+  if(amode==='welcome')return '<div class="warch"><i class="wr1"></i><i class="wr2"></i><i class="wd1"></i><i class="wd2"></i><div class="wlogo">'+ICO.cap+'</div><div class="wsal">আসসালামু আলাইকুম</div><h1 class="wtit">স্বাগতম<br>এডুকেশন ফান্ডে</h1><p class="wsub">আমাদের সমিতির হিসাব এখানে দেখুন</p></div><div style="height:18px"></div><button type="button" class="abig wg" data-a="tab" data-m="login">'+ICO.arrow+'আমার অ্যাকাউন্ট আছে</button><button type="button" class="abig alt wg" data-a="tab" data-m="signup">'+ICO.user+'আমি নতুন</button><div class="ahint">প্রথমবার এলে "আমি নতুন" চাপুন। আপনার নাম, ইমেইল আর একটা পাসওয়ার্ড দিলেই হবে। এরপর এডমিন অনুমোদন দিলে হিসাব দেখতে পাবেন।</div>';
   var back=ADMIN_SITE?'':'<button type="button" class="aback" data-a="tab" data-m="welcome">'+ICO.back+'পিছনে</button>';
   if(amode==='login')return back+'<div class="alogo">'+ICO.cap+'</div><h1 class="atitle">'+(ADMIN_SITE?'এডমিন লগইন':'লগইন')+'</h1><p class="asub">আপনার ইমেইল ও পাসওয়ার্ড দিন</p><div class="afld"><label for="a_email">ইমেইল</label><input id="a_email" type="text" inputmode="email" autocomplete="username" autocapitalize="off" placeholder="example@gmail.com" value="'+lastEmail()+'"></div><div class="afld"><label for="a_pass">পাসওয়ার্ড</label><input id="a_pass" type="password" autocomplete="current-password"></div>'+m+'<button type="button" class="abig" data-a="email-in">ঢুকুন</button>';
   return back+'<h1 class="atitle">নতুন অ্যাকাউন্ট</h1><p class="asub">একবারই করতে হবে</p><div class="afld"><label for="a_name">আপনার নাম</label><input id="a_name" type="text" autocomplete="name"></div><div class="afld"><label for="a_email">ইমেইল (Gmail)</label><input id="a_email" type="text" inputmode="email" autocomplete="email" autocapitalize="off" placeholder="example@gmail.com"></div><div class="afld"><label for="a_pass">পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)</label><input id="a_pass" type="password" autocomplete="new-password"></div>'+m+'<button type="button" class="abig" data-a="email-up">অ্যাকাউন্ট খুলুন</button>';
